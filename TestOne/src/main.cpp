@@ -13,11 +13,11 @@
 // Controller1          controller                    
 // grabberML            motor         1               
 // grabberMR            motor         2               
-// ElevM                motor         3               
-// MFL                  motor         4               
-// MBL                  motor         5               
-// MFR                  motor         6               
-// MBR                  motor         7               
+// ElevM                motor         15              
+// MFL                  motor         14              
+// MBL                  motor         11              
+// MFR                  motor         13              
+// MBR                  motor         12              
 // ---- END VEXCODE CONFIGURED DEVICES ----
 
 #include "vex.h"
@@ -99,11 +99,11 @@ void grabberController() {
 
 void elevatorUnload() {
   //2100
-  if (ElevM.position(degrees) < 1300) {
+  if (ElevM.position(degrees) < 1200) {
     grabSpeed = 10;
     elevSpeed = 100;
-    grabberML.spin(forward);
-    grabberMR.spin(forward);
+    grabberML.spin(reverse);
+    grabberMR.spin(reverse);
     ElevM.spinToPosition(1100, degrees);
     vex::task::sleep(10);
     grabberML.stop();
@@ -278,7 +278,7 @@ int main() {
     elevatorController();
     ControllerSwitch();
 
-   /* 
+/*   
     if (Controller1.ButtonR1.pressing()){
 
   Brain.Screen.clearLine(1, color::black);
@@ -286,6 +286,6 @@ int main() {
   Brain.Screen.print("%f",ElevM.position(degrees));
 
     }
-    */
+  */  
   }
 }
