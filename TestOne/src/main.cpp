@@ -29,7 +29,7 @@ using namespace vex;
 int grabSpeed = 100;
 int elevSpeed = 100;
 int motorSpeed = 100;
-bool controllerSwitch = true;
+bool controllerSwitch = false;
 bool driveHold = false;
 
 // SpeedController is for controlling the speed of motor
@@ -151,7 +151,7 @@ void elevatorUnload() {
     driveMotor('F', 'F');
     vex::task::sleep(500);
     driveMotor('S', 'S');
-        motorSpeed = -20;
+    motorSpeed = -20;
     vex::task::sleep(100);
     driveMotor('B', 'B');
     vex::task::sleep(500);
@@ -208,6 +208,7 @@ int DriveController() {
 }
 
 void autoBlueOneTime() {
+  bool a = controllerSwitch;
   controllerSwitch = true;
   grabSpeed = 100;
   grabberML.spin(forward);
@@ -276,6 +277,7 @@ void autoBlueOneTime() {
   vex::task::sleep(500);
   // U 5
   elevatorUnload();
+  controllerSwitch = a;
 }
 
 int main() {
