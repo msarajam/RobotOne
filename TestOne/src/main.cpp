@@ -10,14 +10,16 @@
 // ---- START VEXCODE CONFIGURED DEVICES ----
 // Robot Configuration:
 // [Name]               [Type]        [Port(s)]
-// Controller1          controller                    
-// grabberML            motor         1               
-// grabberMR            motor         2               
-// ElevM                motor         15              
-// MFL                  motor         14              
-// MBL                  motor         11              
-// MFR                  motor         13              
-// MBR                  motor         12              
+// Controller1          controller
+// grabberML            motor         1
+// grabberMR            motor         2
+// ElevM                motor         15
+// MFL                  motor         14
+// MBL                  motor         11
+// MFR                  motor         13
+// MBR                  motor         12
+// ArmL                 motor         4
+// ArmR                 motor         5
 // ---- END VEXCODE CONFIGURED DEVICES ----
 
 #include "vex.h"
@@ -28,6 +30,7 @@ int grabSpeed = 100;
 int elevSpeed = 100;
 int motorSpeed = 100;
 bool controllerSwitch = true;
+bool driveHold = false;
 
 // SpeedController is for controlling the speed of motor
 int SpeedController() {
@@ -75,13 +78,15 @@ int SpeedController() {
 
 // ControllerSwitch is for switch between joystin and button , just for driving
 void ControllerSwitch() {
-  if (Controller1.ButtonR2.pressing()) {
-    if (controllerSwitch) {
-      controllerSwitch = false;
-    } else {
-      controllerSwitch = true;
+  /*
+    if (Controller1.ButtonR2.pressing()) {
+      if (controllerSwitch) {
+        controllerSwitch = false;
+      } else {
+        controllerSwitch = true;
+      }
     }
-  }
+    */
 }
 // grabberController is for control the motion of grabber
 void grabberController() {
@@ -94,46 +99,6 @@ void grabberController() {
   } else {
     grabberML.stop();
     grabberMR.stop();
-  }
-}
-
-void elevatorUnload() {
-  //2100
-  if (ElevM.position(degrees) < 1200) {
-    grabSpeed = 10;
-    elevSpeed = 100;
-    grabberML.spin(reverse);
-    grabberMR.spin(reverse);
-    ElevM.spinToPosition(1100, degrees);
-    vex::task::sleep(10);
-    grabberML.stop();
-    grabberMR.stop();
-    grabSpeed = -10;
-    elevSpeed = 30;
-    vex::task::sleep(100);
-    grabberML.spin(forward);
-    grabberMR.spin(forward);
-    ElevM.spinToPosition(1450, degrees);
-    elevSpeed = 140;
-    vex::task::sleep(500);
-    grabberML.stop();
-    grabberMR.stop();
-    ElevM.spinToPosition(0, degrees);
-  }
-}
-
-// elevatorController is for control the motion of elevator
-void elevatorController() {
-  if (Controller1.ButtonR1.pressing() && Controller1.ButtonR2.pressing()) {
-    elevatorUnload();
-  } else if (Controller1.ButtonR1.pressing()) {
-    if (ElevM.position(degrees) > 50) {
-      ElevM.spinToPosition(0, degrees);
-    }
-  } else if (Controller1.ButtonR2.pressing()) {
-    ElevM.spin(forward);
-  } else {
-    ElevM.stop();
   }
 }
 
@@ -160,6 +125,57 @@ void driveMotor(char l, char r) {
   }
 }
 
+void elevatorUnload() {
+  // 2100
+  if (ElevM.position(degrees) < 1200) {
+    grabSpeed = 40;
+    elevSpeed = 100;
+    grabberML.spin(reverse);
+    grabberMR.spin(reverse);
+    ElevM.spinToPosition(1100, degrees);
+    vex::task::sleep(10);
+    grabberML.stop();
+    grabberMR.stop();
+    grabSpeed = -10;
+    elevSpeed = 30;
+    vex::task::sleep(100);
+    grabberML.spin(forward);
+    grabberMR.spin(forward);
+    ElevM.spinToPosition(1500, degrees);
+    elevSpeed = 140;
+    driveHold = true;
+    motorSpeed = 20;
+    vex::task::sleep(500);
+    grabberML.stop();
+    grabberMR.stop();
+    driveMotor('F', 'F');
+    vex::task::sleep(500);
+    driveMotor('S', 'S');
+        motorSpeed = -20;
+    vex::task::sleep(100);
+    driveMotor('B', 'B');
+    vex::task::sleep(500);
+    driveHold = false;
+    driveMotor('S', 'S');
+    ElevM.spinToPosition(0, degrees);
+  }
+}
+
+// elevatorController is for control the motion of elevator
+void elevatorController() {
+  if (Controller1.ButtonR1.pressing() && Controller1.ButtonR2.pressing()) {
+    elevatorUnload();
+  } else if (Controller1.ButtonR1.pressing()) {
+    if (ElevM.position(degrees) > 50) {
+      ElevM.spinToPosition(0, degrees);
+    }
+  } else if (Controller1.ButtonR2.pressing()) {
+    ElevM.spin(forward);
+  } else {
+    ElevM.stop();
+  }
+}
+
 int DriveController() {
   while (true) {
     if (controllerSwitch) {
@@ -172,7 +188,9 @@ int DriveController() {
       } else if (Controller1.ButtonRight.pressing()) {
         driveMotor('F', 'B');
       } else {
-        driveMotor('S', 'S');
+        if (!driveHold) {
+          driveMotor('S', 'S');
+        }
       }
     } else {
       MFL.setVelocity(Controller1.Axis3.value() * 3, rpm);
@@ -184,6 +202,7 @@ int DriveController() {
       MFR.spin(forward);
       MBR.spin(forward);
     }
+    vex::task::sleep(10);
   }
   return 0;
 }
@@ -262,15 +281,19 @@ void autoBlueOneTime() {
 int main() {
   // Initializing Robot Configuration. DO NOT REMOVE!
   vexcodeInit();
-
+  vex::task::sleep(10);
+  ElevM.setVelocity(300, rpm);
+  ElevM.spin(reverse);
+  vex::task::sleep(500);
+  // elevSpeed = 100;
   Brain.Screen.clearLine(1, color::black);
   Brain.Screen.setCursor(1, 0);
   Brain.Screen.print("Prigram Started");
   ElevM.setPosition(0, degrees);
 
   // running tasks
-   vex::task speedController(SpeedController);
-   vex::task driveController(DriveController);
+  vex::task speedController(SpeedController);
+  vex::task driveController(DriveController);
 
   while (true) {
 
@@ -278,14 +301,14 @@ int main() {
     elevatorController();
     ControllerSwitch();
 
-/*   
-    if (Controller1.ButtonR1.pressing()){
+    /*
+        if (Controller1.ButtonR1.pressing()){
 
-  Brain.Screen.clearLine(1, color::black);
-  Brain.Screen.setCursor(1, 0);
-  Brain.Screen.print("%f",ElevM.position(degrees));
+      Brain.Screen.clearLine(1, color::black);
+      Brain.Screen.setCursor(1, 0);
+      Brain.Screen.print("%f",ElevM.position(degrees));
 
-    }
-  */  
+        }
+      */
   }
 }

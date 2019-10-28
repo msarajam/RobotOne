@@ -11,6 +11,8 @@ extern motor MFL;
 extern motor MBL;
 extern motor MFR;
 extern motor MBR;
+extern motor ArmL;
+extern motor ArmR;
 
 /**
  * Used to initialize code/tasks/devices added using tools in VEXcode Text.
